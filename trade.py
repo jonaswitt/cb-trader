@@ -7,7 +7,26 @@ dotenv.load_dotenv(dotenv_path=".env.local")
 
 client = cbpro.AuthenticatedClient(os.environ["CB_KEY"], os.environ["CB_SECRET"], os.environ["CB_PASSPHRASE"])
 
-product_id = "BTC-EUR"
+curr_fiat = "EUR"
+curr_crypto = "BTC"
+product_id = "{}-{}".format(curr_crypto, curr_fiat)
+
+# Get Balances
+
+balance_fiat = None
+balance_crypto = None
+for acc in client.get_accounts():
+    if balance_fiat is None and acc["currency"] == curr_fiat:
+        balance_fiat = float(acc["balance"])
+    elif balance_crypto is None and acc["currency"] == curr_crypto:
+        balance_crypto = float(acc["balance"])
+    if balance_fiat is not None and balance_crypto is not None:
+        break
+
+print("Balances:")
+print("{}: {:9.2f}".format(curr_fiat, balance_fiat))
+print("{}: {:12.5f}".format(curr_crypto, balance_crypto))
+print()
 
 last_sell = None
 last_buy = None
