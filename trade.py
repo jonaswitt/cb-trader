@@ -2,6 +2,7 @@ import cbpro
 import dotenv
 import os
 import sys
+import datetime
 
 dotenv.load_dotenv(dotenv_path=".env.local")
 
@@ -24,8 +25,8 @@ for acc in client.get_accounts():
         break
 
 print("Balances:")
-print("{}: {:9.2f}".format(curr_fiat, balance_fiat))
-print("{}: {:12.5f}".format(curr_crypto, balance_crypto))
+print("{}: {:9,.2f}".format(curr_fiat, balance_fiat))
+print("{}: {:12,.5f}".format(curr_crypto, balance_crypto))
 print()
 
 last_sell = None
@@ -47,5 +48,13 @@ if last_buy is not None:
 orders = list(client.get_orders(product_id=product_id))
 # print(orders)
 print("{} orders @ {}".format(len(orders), ", ".join([o["price"] for o in orders])))
+print()
 
-# client.buy(product_id=product_id, price="5000", order_type='limit', size="0.1")
+print("Closing Prices:")
+end = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+start = end - datetime.timedelta(days=30)
+rates = client.get_product_historic_rates(product_id=product_id, start=start.isoformat(), end=end.isoformat(), granularity=86400)
+for rate in rates:
+    t = datetime.datetime.fromtimestamp(rate[0], datetime.timezone.utc)
+    close = float(rate[4])
+    print("{} @ {:9,.2f} {}".format(t.isoformat(), close, curr_fiat))
