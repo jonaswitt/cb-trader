@@ -12,7 +12,9 @@ curr_fiat = "EUR"
 curr_crypto = "BTC"
 product_id = "{}-{}".format(curr_crypto, curr_fiat)
 
-# Get Balances
+# -------------------------
+# Print Balances
+# -------------------------
 
 balance_fiat = None
 balance_crypto = None
@@ -29,6 +31,10 @@ print("{}: {:9,.2f}".format(curr_fiat, balance_fiat))
 print("{}: {:12,.5f}".format(curr_crypto, balance_crypto))
 print()
 
+# -------------------------
+# Print Last Trades
+# -------------------------
+
 last_sell = None
 last_buy = None
 for fill in client.get_fills(product_id=product_id, limit=1):
@@ -39,21 +45,33 @@ for fill in client.get_fills(product_id=product_id, limit=1):
     if last_sell is not None and last_buy is not None:
         break
 
+print("Last fills:")
 if last_sell is not None:
-    print("Last sell @ {}".format(last_sell["price"]))
+    print("Last SELL @ {:9,.2f}".format(last_sell["price"]))
 if last_buy is not None:
-    print("Last buy @ {}".format(last_buy["price"]))
-
-
-orders = list(client.get_orders(product_id=product_id))
-# print(orders)
-print("{} orders @ {}".format(len(orders), ", ".join([o["price"] for o in orders])))
+    print("Last BUY  @ {:9,.2f}".format(last_buy["price"]))
 print()
 
-print("Closing Prices:")
+# -------------------------
+# Print Orders
+# -------------------------
+
+orders = list(client.get_orders(product_id=product_id))
+sell_orders = list(filter(lambda o: o["side"] == "sell", orders))
+buy_orders = list(filter(lambda o: o["side"] == "buy", orders))
+
+print("Orders:")
+print("SELL: {} orders @ {}".format(len(sell_orders), ", ".join(map(lambda o: "{:9,.2f}".format(o["price"]), sell_orders))))
+print("BUY:  {} orders @ {}".format(len(buy_orders), ", ".join(map(lambda o: "{:9,.2f}".format(o["price"]), buy_orders))))
+
+# -------------------------
+# Print Closing Prices
+# -------------------------
+
 end = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
 start = end - datetime.timedelta(days=30)
 rates = client.get_product_historic_rates(product_id=product_id, start=start.isoformat(), end=end.isoformat(), granularity=86400)
+print("Closing Prices:")
 for rate in rates:
     t = datetime.datetime.fromtimestamp(rate[0], datetime.timezone.utc)
     close = float(rate[4])
