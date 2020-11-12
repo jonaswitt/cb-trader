@@ -3,6 +3,7 @@ import dotenv
 import os
 import sys
 import datetime
+import pandas as pd
 
 dotenv.load_dotenv(dotenv_path=".env.local")
 
@@ -65,14 +66,19 @@ print("SELL: {} orders @ {}".format(len(sell_orders), ", ".join(map(lambda o: "{
 print("BUY:  {} orders @ {}".format(len(buy_orders), ", ".join(map(lambda o: "{:9,.2f}".format(o["price"]), buy_orders))))
 
 # -------------------------
-# Print Closing Prices
+# Print Prices
 # -------------------------
 
 end = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
 start = end - datetime.timedelta(days=30)
 rates = client.get_product_historic_rates(product_id=product_id, start=start.isoformat(), end=end.isoformat(), granularity=86400)
-print("Closing Prices:")
-for rate in rates:
-    t = datetime.datetime.fromtimestamp(rate[0], datetime.timezone.utc)
-    close = float(rate[4])
-    print("{} @ {:9,.2f} {}".format(t.isoformat(), close, curr_fiat))
+df = pd.DataFrame(data=rates[1:], columns=["Day", "Low", "High", "Open", "Close", "Volume"]).set_index("Day")
+df.index = pd.to_datetime(df.index, unit="s", utc=True).date
+df.drop(["Volume"], axis=1, inplace=True)
+df.sort_index(inplace=True)
+
+df["EMA12"] = df["Close"].ewm(span=12, min_periods=12, adjust=False).mean()
+df["EMA26"] = df["Close"].ewm(span=26, min_periods=26, adjust=False).mean()
+
+print("Prices:")
+print(df)
