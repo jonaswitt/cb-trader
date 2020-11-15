@@ -16,6 +16,35 @@ curr_crypto = "BTC"
 product_id = "{}-{}".format(curr_crypto, curr_fiat)
 
 # -------------------------
+# Print Prices
+# -------------------------
+
+now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+
+end = now
+start = end - datetime.timedelta(days=50)
+rates = client.get_product_historic_rates(product_id=product_id, start=start.isoformat(), end=end.isoformat(), granularity=86400)
+df = pd.DataFrame(data=rates, columns=["StartOfPeriod", "Low", "High", "Open", "Close", "Volume"]).set_index("StartOfPeriod")
+df.index = pd.to_datetime(df.index, unit="s", utc=True)
+df.drop(["Volume"], axis=1, inplace=True)
+df.sort_index(inplace=True)
+df["EndOfPeriod"] = df.index + datetime.timedelta(1) - datetime.timedelta(minutes=1)
+df.loc[df.index[-1], "EndOfPeriod"] = end
+df = df.set_index("EndOfPeriod")[["Close"]]
+
+df["EMA12"] = df["Close"].ewm(span=12, min_periods=12, adjust=False).mean()
+df["EMA26"] = df["Close"].ewm(span=26, min_periods=26, adjust=False).mean()
+df["EMA12Perc26"] = (df["EMA12"] / df["EMA26"])
+ema12 = df.loc[now, "EMA12"]
+ema26 = df.loc[now, "EMA26"]
+ema12perc26 = df.loc[now, "EMA12Perc26"]
+lastClose = df.loc[now, "Close"]
+
+print("{} Prices (in {}):".format(curr_crypto, curr_fiat))
+print(df[~np.isnan(df["EMA12Perc26"])][["Close", "EMA12Perc26"]])
+print()
+
+# -------------------------
 # Print Balances
 # -------------------------
 
@@ -68,31 +97,6 @@ print("SELL: {} orders @ {}".format(len(sell_orders), ", ".join(map(lambda o: "{
 print("BUY:  {} orders @ {}".format(len(buy_orders), ", ".join(map(lambda o: "{:9,.2f}".format(o["price"]), buy_orders))))
 
 # -------------------------
-# Print Prices
-# -------------------------
-
-now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
-
-end = now
-start = end - datetime.timedelta(days=50)
-rates = client.get_product_historic_rates(product_id=product_id, start=start.isoformat(), end=end.isoformat(), granularity=86400)
-df = pd.DataFrame(data=rates, columns=["StartOfPeriod", "Low", "High", "Open", "Close", "Volume"]).set_index("StartOfPeriod")
-df.index = pd.to_datetime(df.index, unit="s", utc=True)
-df.drop(["Volume"], axis=1, inplace=True)
-df.sort_index(inplace=True)
-df["EndOfPeriod"] = df.index + datetime.timedelta(1) - datetime.timedelta(minutes=1)
-df.loc[df.index[-1], "EndOfPeriod"] = end
-df = df.set_index("EndOfPeriod")[["Close"]]
-
-df["EMA12"] = df["Close"].ewm(span=12, min_periods=12, adjust=False).mean()
-df["EMA26"] = df["Close"].ewm(span=26, min_periods=26, adjust=False).mean()
-df["EMA12Perc26"] = (df["EMA12"] / df["EMA26"])
-
-print("Prices:")
-print(df[~np.isnan(df["EMA12Perc26"])][["Close", "EMA12Perc26"]])
-print()
-
-# -------------------------
 # EMA12/EMA26 Trading Suggestions
 # -------------------------
 
@@ -110,13 +114,7 @@ eq_ema26 = np.linalg.lstsq(A, p_ema26, rcond=None)[0]
 
 t_intersect = (eq_ema26[1] - eq_ema12[1]) / (eq_ema12[0] - eq_ema26[0])
 d_interset = datetime.datetime.utcfromtimestamp(t_intersect).replace(tzinfo=datetime.timezone.utc)
-
 ema_converging = d_interset > now
-ema12 = df.loc[now, "EMA12"]
-ema26 = df.loc[now, "EMA26"]
-ema12perc26 = df.loc[now, "EMA12Perc26"]
-
-lastClose = df.loc[now, "Close"]
 
 buyMarket = False
 sellMarket = False
