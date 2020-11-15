@@ -62,6 +62,8 @@ print("Balances:")
 print("{}: {:9,.2f}".format(curr_fiat, balance_fiat))
 print("{}: {:12,.5f}".format(curr_crypto, balance_crypto))
 print()
+print("Sum: {:9,.2f} {}".format(balance_fiat + balance_crypto * lastClose, curr_fiat))
+print()
 
 # -------------------------
 # Print Last Trades
