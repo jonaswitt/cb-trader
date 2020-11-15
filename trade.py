@@ -19,7 +19,7 @@ product_id = "{}-{}".format(curr_crypto, curr_fiat)
 # Print Prices
 # -------------------------
 
-now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc, microsecond=0)
 
 end = now
 start = end - datetime.timedelta(days=50)
