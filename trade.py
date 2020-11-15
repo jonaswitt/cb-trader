@@ -9,6 +9,7 @@ import numpy as np
 dotenv.load_dotenv(dotenv_path=".env.local")
 
 client = cbpro.AuthenticatedClient(os.environ["CB_KEY"], os.environ["CB_SECRET"], os.environ["CB_PASSPHRASE"])
+live = os.environ.get("LIVE", "false") == "true"
 
 curr_fiat = "EUR"
 curr_crypto = "BTC"
@@ -91,3 +92,63 @@ print("Prices:")
 print(df[~np.isnan(df["EMA12Perc26"])][["Close", "EMA12Perc26"]])
 print()
 
+# -------------------------
+# EMA12/EMA26 Trading Suggestions
+# -------------------------
+
+ema12 = df.loc[now, "EMA12"]
+ema26 = df.loc[now, "EMA26"]
+ema12perc26 = df.loc[now, "EMA12Perc26"]
+
+lastClose = df.loc[now, "Close"]
+
+buyMarket = False
+sellMarket = False
+
+if ema12perc26 > 1:
+    print("EMA12 > EMA26 ({:+5.1f}%) -- BUY".format((ema12perc26 - 1) * 100))
+    if balance_fiat > 10:
+        if last_sell is not None and last_sell["price"] > lastClose * 1.01:
+            print("Last sell {:f} too close to market {:f} to buy".format(last_sell["price"], lastClose))
+        else:
+            buyMarket = True
+    else:
+        print("All in, no {} left in portfolio".format(curr_fiat))
+
+elif ema12perc26 < 1:
+    print("EMA12 < EMA26 ({:+5.1f}%) -- SELL".format((ema12perc26 - 1) * 100))
+    if balance_crypto > 0:
+        if ema_converging and last_buy is not None and last_buy["price"] * 1.01 > lastClose:
+            print("Last buy {:f} too close to market {:f} to sell".format(last_buy["price"], lastClose))
+        else:
+            sellMarket = True
+    else:
+        print("All out, no {} left in portfolio".format(curr_crypto))
+
+print()
+print("Orders:")
+if buyMarket:
+    print("BUY  {:9,.2f} {} @ market price (ca. {:9,.2f} {})".format(balance_fiat, curr_fiat, lastClose, curr_fiat))
+elif sellMarket:
+    print("SELL {:12,.5f} {} @ market price (ca. {:9,.2f} {})".format(balance_crypto, curr_crypto, lastClose, curr_fiat))
+else:
+    print("None")
+print("")
+
+if not live:
+    print("DRY RUN, stopping here without any orders created (set LIVE=true)")
+    sys.exit(0)
+
+if len(orders) > 0:
+    print("There are open orders, aborting")
+    sys.exit(1)
+
+orderReq = None
+if buyMarket:
+    orderReq = dict(product_id=product_id, side="buy", order_type="market", funds=str(balance_fiat))
+elif sellMarket:
+    orderReq = dict(product_id=product_id, side="sell", order_type="market", size=str(balance_crypto))
+
+if orderReq is not None:
+    orderRes = client.place_order(**orderReq)
+    print("Placed order", orderRes)

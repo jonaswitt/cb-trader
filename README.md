@@ -21,5 +21,5 @@ CB_PASSPHRASE=...
 ## Run
 
 ```
-python trade.py
+LIVE=true python trade.py
 ```
