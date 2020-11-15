@@ -96,6 +96,22 @@ print()
 # EMA12/EMA26 Trading Suggestions
 # -------------------------
 
+# Determine date when linear extrapolation of EMA12 and EMA26 will cross
+# If crossing in the future, EMA12 and EMA26 are converging
+# If crossing in the past, EMA12 and EMA26 are diverging
+numDataPoints = 3
+p_time = list(map(lambda t: t.timestamp(), df.index[-numDataPoints:].values))
+p_ema12 = df["EMA12"][-numDataPoints:].values
+p_ema26 = df["EMA26"][-numDataPoints:].values
+
+A = np.vstack([p_time,np.ones(len(p_time))]).T
+eq_ema12 = np.linalg.lstsq(A, p_ema12, rcond=None)[0]
+eq_ema26 = np.linalg.lstsq(A, p_ema26, rcond=None)[0]
+
+t_intersect = (eq_ema26[1] - eq_ema12[1]) / (eq_ema12[0] - eq_ema26[0])
+d_interset = datetime.datetime.utcfromtimestamp(t_intersect).replace(tzinfo=datetime.timezone.utc)
+
+ema_converging = d_interset > now
 ema12 = df.loc[now, "EMA12"]
 ema26 = df.loc[now, "EMA26"]
 ema12perc26 = df.loc[now, "EMA12Perc26"]
@@ -124,6 +140,11 @@ elif ema12perc26 < 1:
             sellMarket = True
     else:
         print("All out, no {} left in portfolio".format(curr_crypto))
+
+if ema_converging:
+    print("EMA12 and EMA26 are converging")
+else:
+    print("EMA12 and EMA26 are diverging")
 
 print()
 print("Orders:")
