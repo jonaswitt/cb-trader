@@ -48,9 +48,9 @@ for fill in client.get_fills(product_id=product_id, limit=1):
 
 print("Last fills:")
 if last_sell is not None:
-    print("Last SELL @ {:9,.2f}".format(last_sell["price"]))
+    print("Last SELL @ {:9,.2f}".format(float(last_sell["price"])))
 if last_buy is not None:
-    print("Last BUY  @ {:9,.2f}".format(last_buy["price"]))
+    print("Last BUY  @ {:9,.2f}".format(float(last_buy["price"])))
 print()
 
 # -------------------------
