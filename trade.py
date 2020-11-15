@@ -84,6 +84,8 @@ if last_sell is not None:
     print("Last SELL @ {:9,.2f}".format(float(last_sell["price"])))
 if last_buy is not None:
     print("Last BUY  @ {:9,.2f}".format(float(last_buy["price"])))
+if last_sell is None and last_buy is None:
+    print("None")
 print()
 
 # -------------------------
@@ -94,12 +96,17 @@ orders = list(client.get_orders(product_id=product_id))
 sell_orders = list(filter(lambda o: o["side"] == "sell", orders))
 buy_orders = list(filter(lambda o: o["side"] == "buy", orders))
 
-print("Orders:")
-print("SELL: {} orders @ {}".format(len(sell_orders), ", ".join(map(lambda o: "{:9,.2f}".format(o["price"]), sell_orders))))
-print("BUY:  {} orders @ {}".format(len(buy_orders), ", ".join(map(lambda o: "{:9,.2f}".format(o["price"]), buy_orders))))
+print("Open Orders:")
+if len(sell_orders) > 0:
+    print("SELL: {} orders @ {}".format(len(sell_orders), ", ".join(map(lambda o: "{:9,.2f}".format(o["price"]), sell_orders))))
+if len(buy_orders) > 0:
+    print("BUY:  {} orders @ {}".format(len(buy_orders), ", ".join(map(lambda o: "{:9,.2f}".format(o["price"]), buy_orders))))
+if len(sell_orders) == 0 and len(buy_orders) == 0:
+    print("None")
+print()
 
 # -------------------------
-# EMA12/EMA26 Trading Suggestions
+# EMA12/EMA26 Trend Analysis
 # -------------------------
 
 # Determine date when linear extrapolation of EMA12 and EMA26 will cross
@@ -118,9 +125,21 @@ t_intersect = (eq_ema26[1] - eq_ema12[1]) / (eq_ema12[0] - eq_ema26[0])
 d_interset = datetime.datetime.utcfromtimestamp(t_intersect).replace(tzinfo=datetime.timezone.utc)
 ema_converging = d_interset > now
 
+print("EMA Trend:")
+if ema_converging:
+    print("EMA12 and EMA26 are converging")
+else:
+    print("EMA12 and EMA26 are diverging")
+print()
+
+# -------------------------
+# EMA12/EMA26 Trading Suggestions
+# -------------------------
+
 buyMarket = False
 sellMarket = False
 
+print("Trading Actions:")
 if ema12perc26 > 1:
     print("EMA12 > EMA26 ({:+5.1f}%) -- BUY".format((ema12perc26 - 1) * 100))
     if balance_fiat > 10:
@@ -141,13 +160,8 @@ elif ema12perc26 < 1:
     else:
         print("All out, no {} left in portfolio".format(curr_crypto))
 
-if ema_converging:
-    print("EMA12 and EMA26 are converging")
-else:
-    print("EMA12 and EMA26 are diverging")
-
 print()
-print("Orders:")
+print("New Orders:")
 if buyMarket:
     print("BUY  {:9,.2f} {} @ market price (ca. {:9,.2f} {})".format(balance_fiat, curr_fiat, lastClose, curr_fiat))
 elif sellMarket:
