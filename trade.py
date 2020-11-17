@@ -15,6 +15,12 @@ curr_fiat = "EUR"
 curr_crypto = "BTC"
 product_id = "{}-{}".format(curr_crypto, curr_fiat)
 
+def assertValidResponse(response):
+    if isinstance(response, dict):
+        if "message" in response:
+            raise Exception(response["message"])
+    return response
+
 def run():
     # -------------------------
     # Print Prices
@@ -25,6 +31,7 @@ def run():
     end = now
     start = end - datetime.timedelta(days=50)
     rates = client.get_product_historic_rates(product_id=product_id, start=start.isoformat(), end=end.isoformat(), granularity=86400)
+    assertValidResponse(rates)
     df = pd.DataFrame(data=rates, columns=["StartOfPeriod", "Low", "High", "Open", "Close", "Volume"]).set_index("StartOfPeriod")
     df.index = pd.to_datetime(df.index, unit="s", utc=True)
     df.drop(["Volume"], axis=1, inplace=True)
@@ -51,7 +58,9 @@ def run():
 
     balance_fiat = None
     balance_crypto = None
-    for acc in client.get_accounts():
+    accounts = client.get_accounts()
+    assertValidResponse(accounts)
+    for acc in accounts:
         if balance_fiat is None and acc["currency"] == curr_fiat:
             balance_fiat = float(acc["balance"])
         elif balance_crypto is None and acc["currency"] == curr_crypto:
@@ -72,7 +81,9 @@ def run():
 
     last_sell = None
     last_buy = None
-    for fill in client.get_fills(product_id=product_id, limit=1):
+    fills = client.get_fills(product_id=product_id, limit=1)
+    assertValidResponse(fills)
+    for fill in fills:
         if last_sell is None and fill["side"] == "sell":
             last_sell = fill
         elif last_buy is None and fill["side"] == "buy":
@@ -93,7 +104,9 @@ def run():
     # Print Orders
     # -------------------------
 
-    orders = list(client.get_orders(product_id=product_id))
+    orders = client.get_orders(product_id=product_id)
+    assertValidResponse(orders)
+    orders = list(orders)
     sell_orders = list(filter(lambda o: o["side"] == "sell", orders))
     buy_orders = list(filter(lambda o: o["side"] == "buy", orders))
 
@@ -187,6 +200,7 @@ def run():
 
     if orderReq is not None:
         orderRes = client.place_order(**orderReq)
+        assertValidResponse(orderRes)
         print("Placed order", orderRes)
 
 
