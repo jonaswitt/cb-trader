@@ -190,6 +190,9 @@ def run():
         print("Placed order", orderRes)
 
 
+def handler(event, context):
+    run()
+
 if __name__ == '__main__' and "AWS_LAMBDA_FUNCTION_VERSION" not in os.environ:
     run()
 

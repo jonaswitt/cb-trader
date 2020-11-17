@@ -1,5 +1,11 @@
 .env.local
 
+dependencies-layer*.zip
+dependencies-layer
+
+# Serverless directories
+.serverless
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -73,5 +79,8 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Dependency directories
+node_modules/
 
 .DS_Store

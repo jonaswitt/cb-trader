@@ -1,0 +1,73 @@
+service: cb-trader
+
+frameworkVersion: ">=1.68.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.7
+  memorySize: 512
+  timeout: 900
+  logRetentionInDays: 90
+
+  stage: ${opt:stage, 'prod'}
+  region: ${opt:region, 'eu-central-1'}
+
+  environment:
+    LIVE: true
+
+plugins:
+  - serverless-dotenv-plugin
+  # - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    pythonBin: python
+    fileName: requirements.txt
+    zip: false
+    slim: true
+    dockerizePip: true
+
+package:
+  include:
+    - "*.py"
+  exclude:
+    - dependencies-layer/**
+    - dependencies-layer*.zip
+    - "*.sh"
+    - ".*"
+    - __pycache__/**
+    - venv/**
+    - venv3/**
+    - venv37/**
+    - node_modules/**
+    - package-lock.json
+    - package.json
+    - "*.md"
+    - yarn.lock
+    - .cache/**
+
+functions:
+  trade:
+    handler: trade.handler
+    events:
+      - schedule: cron(0 0/6 ? * * *) # run every 6 hours
+    layers:
+      - Ref: DependenciesLayerVersion
+
+resources:
+  Description: Coinbase Pro Trader
+
+  Resources:
+    DependenciesLayerVersion:
+      Type: AWS::Lambda::LayerVersion
+      Properties:
+        CompatibleRuntimes:
+          - python3.7
+        Content:
+          S3Bucket: dependencies.cb-trader.jonaswitt.com
+          S3Key: dependencies-layer.zip
+          S3ObjectVersion: kRHpk7H.HzKrjDh0h8LTy1NFvxtrcJqY
+        Description: Python dependencies of the cb-trader tool (pandas/numpy)
+        LayerName: cb-trader-dependencies
+
+  Outputs:

@@ -1,0 +1,12 @@
+{
+  "name": "cb-trader",
+  "version": "1.0.0",
+  "repository": "git@github.com:jonaswitt/cb-trader.git",
+  "author": "Jonas Witt <mail@jonaswitt.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "serverless": "^1.68.0",
+    "serverless-dotenv-plugin": "^3.1.0",
+    "serverless-python-requirements": "^5.1.0"
+  }
+}
