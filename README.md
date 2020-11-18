@@ -3,10 +3,11 @@
 Retrieves market details for a selected fiat/crypto pair from Coinbase Pro, 
 makes trading decisions based on market conditions and creates orders.
 
+Can be deployed to AWS to run as a scheduled Lambda function.
+
 ## Development goals
 
 * Place limit orders at estimated change of trading conditions
-* Set up for scheduled execution on AWS Lambda
 
 ## Setup
 
