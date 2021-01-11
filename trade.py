@@ -40,16 +40,19 @@ def run():
     df.drop(["Volume"], axis=1, inplace=True)
     df.sort_index(inplace=True)
     df["EndOfPeriod"] = df.index + period - datetime.timedelta(seconds=1)
-    df.loc[df.index[-1], "EndOfPeriod"] = end
+
+    df.loc[df.index[-1], "EndOfPeriod"] = pd.Timestamp(end)
+
     df = df.set_index("EndOfPeriod")[["Close"]]
+    end = pd.Timestamp(df.index[-1])
 
     df["EMA12"] = df["Close"].ewm(span=12, min_periods=12, adjust=False).mean()
     df["EMA26"] = df["Close"].ewm(span=26, min_periods=26, adjust=False).mean()
     df["EMA12Perc26"] = (df["EMA12"] / df["EMA26"])
-    ema12 = df.loc[now, "EMA12"]
-    ema26 = df.loc[now, "EMA26"]
-    ema12perc26 = df.loc[now, "EMA12Perc26"]
-    lastClose = df.loc[now, "Close"]
+    ema12 = df.loc[end, "EMA12"]
+    ema26 = df.loc[end, "EMA26"]
+    ema12perc26 = df.loc[end, "EMA12Perc26"]
+    lastClose = df.loc[end, "Close"]
 
     print("{} Prices (in {}):".format(curr_crypto, curr_fiat))
     print(df[~np.isnan(df["EMA12Perc26"])][["Close", "EMA12Perc26"]])
@@ -130,7 +133,7 @@ def run():
     # If crossing in the future, EMA12 and EMA26 are converging
     # If crossing in the past, EMA12 and EMA26 are diverging
     numDataPoints = 3
-    p_time = list(map(lambda t: t.timestamp(), df.index[-numDataPoints:].values))
+    p_time = list(map(lambda t: pd.Timestamp(t).timestamp(), df.index[-numDataPoints:].values))
     p_ema12 = df["EMA12"][-numDataPoints:].values
     p_ema26 = df["EMA26"][-numDataPoints:].values
 
@@ -140,7 +143,7 @@ def run():
 
     t_intersect = (eq_ema26[1] - eq_ema12[1]) / (eq_ema12[0] - eq_ema26[0])
     d_interset = datetime.datetime.utcfromtimestamp(t_intersect).replace(tzinfo=datetime.timezone.utc)
-    ema_converging = d_interset > now
+    ema_converging = d_interset > end
 
     print("EMA Trend:")
     if ema_converging:
