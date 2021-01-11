@@ -1,5 +1,6 @@
 import cbpro
 import dotenv
+import math
 import os
 import sys
 import datetime
@@ -163,7 +164,7 @@ def run():
     if ema12perc26 > 1:
         print("EMA12 > EMA26 ({:+5.1f}%) -- BUY".format((ema12perc26 - 1) * 100))
         if balance_fiat > 10:
-            if last_sell is not None and last_sell["price"] > lastClose * 1.01:
+            if last_sell is not None and float(last_sell["price"]) > lastClose * 1.01:
                 print("Last sell {:f} too close to market {:f} to buy".format(last_sell["price"], lastClose))
             else:
                 buyMarket = True
@@ -173,7 +174,7 @@ def run():
     elif ema12perc26 < 1:
         print("EMA12 < EMA26 ({:+5.1f}%) -- SELL".format((ema12perc26 - 1) * 100))
         if balance_crypto > 0:
-            if ema_converging and last_buy is not None and last_buy["price"] * 1.01 > lastClose:
+            if ema_converging and last_buy is not None and float(last_buy["price"]) * 1.01 > lastClose:
                 print("Last buy {:f} too close to market {:f} to sell".format(last_buy["price"], lastClose))
             else:
                 sellMarket = True
@@ -200,9 +201,9 @@ def run():
 
     orderReq = None
     if buyMarket:
-        orderReq = dict(product_id=product_id, side="buy", order_type="market", funds=str(balance_fiat))
+        orderReq = dict(product_id=product_id, side="buy", order_type="market", funds=math.floor(balance_fiat * 100.0) / 100.0)
     elif sellMarket:
-        orderReq = dict(product_id=product_id, side="sell", order_type="market", size=str(balance_crypto))
+        orderReq = dict(product_id=product_id, side="sell", order_type="market", size=math.floor(balance_crypto * 100000.0) / 100000.0)
 
     if orderReq is not None:
         orderRes = client.place_order(**orderReq)
