@@ -175,7 +175,7 @@ def run():
     elif ema12perc26 < 1:
         print("EMA12 < EMA26 ({:+5.1f}%) -- SELL".format((ema12perc26 - 1) * 100))
         if balance_crypto > 0:
-            if ema_converging and last_buy is not None and float(last_buy["price"]) * 1.01 > lastClose:
+            if last_buy is not None and float(last_buy["price"]) * 1.01 > lastClose:
                 print("Last buy {:f} too close to market {:f} to sell".format(last_buy["price"], lastClose))
             else:
                 sellMarket = True
