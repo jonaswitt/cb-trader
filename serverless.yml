@@ -50,7 +50,7 @@ functions:
   trade:
     handler: trade.handler
     events:
-      - schedule: cron(0 0/6 ? * * *) # run every 6 hours
+      - schedule: cron(1 0 ? * * *) # run every 24 hours
     layers:
       - Ref: DependenciesLayerVersion
 

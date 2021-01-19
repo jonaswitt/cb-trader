@@ -43,6 +43,7 @@ def run():
     df["EndOfPeriod"] = df.index + period - datetime.timedelta(seconds=1)
 
     df.loc[df.index[-1], "EndOfPeriod"] = pd.Timestamp(end)
+    df = df.loc[df.index[:-1]]
 
     df = df.set_index("EndOfPeriod")[["Close"]]
     end = pd.Timestamp(df.index[-1])
